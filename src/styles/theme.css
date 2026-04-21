@@ -1,0 +1,41 @@
+/* =====================================================================
+   主题变量 — 色彩、字体、设计 token
+   ===================================================================== */
+
+:root {
+  /* ---- 背景层次 ---- */
+  --bg-void:    #14110f;
+  --bg-panel:   #1d1915;
+  --bg-raised:  #252019;
+  --bg-inset:   #110e0c;
+
+  /* ---- 边框 ---- */
+  --border:      #3a2f24;
+  --border-soft: #2a231c;
+
+  /* ---- 文本 ---- */
+  --ink:     #f4ead9;
+  --ink-mid: #b8a88f;
+  --ink-dim: #7a6c58;
+
+  /* ---- 强调色 ---- */
+  --brass:      #e8a547;
+  --brass-hot:  #ffc872;
+  --brass-deep: #b47a2a;
+  --crimson:    #c94a3a;
+  --jade:       #7fa67a;
+
+  /* ---- 琴键 ---- */
+  --ivory: #f0e6d2;
+  --ebony: #1a1512;
+
+  /* ---- 字体栈（有完整的系统字体 fallback，字体加载失败也好看） ---- */
+  --font-display: 'Fraunces', 'Noto Serif SC', 'Source Han Serif SC',
+                  'Songti SC', 'SimSun', Georgia, serif;
+  --font-body:    'DM Sans', -apple-system, BlinkMacSystemFont,
+                  'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+                  'Noto Serif SC', sans-serif;
+  --font-mono:    'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+  --font-cn:      'Noto Serif SC', 'Source Han Serif SC', 'Songti SC',
+                  'SimSun', serif;
+}

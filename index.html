@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>聆韻 · Piano Atelier</title>
+<!--
+  字体加载策略：
+  - 主源使用 jsDelivr（国内有加速节点），Google Fonts 在国内被墙
+  - 使用 font-display:swap，字体未到时先用系统字体渲染，避免白屏
+  - CSS 里已经配置了优雅的系统字体 fallback（见 theme.css）
+-->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/fraunces@5.0.20/index.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/dm-sans@5.0.20/index.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.20/index.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.0.20/chinese-simplified.css">
+</head>
+<body>
+<div class="grain"></div>
+
+<div class="container">
+  <header>
+    <div class="brand">
+      <div class="brand-mark">聆韻</div>
+      <div class="brand-sub">Piano Atelier</div>
+    </div>
+    <div class="tagline">
+      PITCH · HARMONY · SCORE<br>
+      <span>一个给钢琴习者的工具集</span>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="pitch">
+      <span class="num">01</span>
+      <span class="cn">音高辨识</span>
+    </button>
+    <button class="tab" data-tab="chord">
+      <span class="num">02</span>
+      <span class="cn">和弦助手</span>
+    </button>
+    <button class="tab" data-tab="score">
+      <span class="num">03</span>
+      <span class="cn">乐谱转换</span>
+    </button>
+  </nav>
+
+  <!-- ========== PITCH PANEL ========== -->
+  <section class="panel active" id="panel-pitch">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">聆听 <em>每一个音</em></h2>
+      </div>
+      <p class="panel-desc">
+        用麦克风实时识别你弹奏的音高。基于自相关算法，能显示音名、频率、以及偏离标准音的音分数（±50 cents 以内视为准确）。
+      </p>
+    </div>
+
+    <div class="pitch-main">
+      <div class="pitch-display">
+        <div class="corner-mark tl"></div>
+        <div class="corner-mark tr"></div>
+        <div class="corner-mark bl"></div>
+        <div class="corner-mark br"></div>
+
+        <div id="pitch-note" class="pitch-note silent">— —</div>
+
+        <div class="pitch-meta">
+          <div class="meta-item">
+            <div class="meta-label">Frequency</div>
+            <div class="meta-value" id="pitch-freq">—</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Cents</div>
+            <div class="meta-value" id="pitch-cents">—</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Clarity</div>
+            <div class="meta-value" id="pitch-clarity">—</div>
+          </div>
+        </div>
+
+        <div class="tuning-meter">
+          <div class="meter-bar">
+            <div class="meter-center"></div>
+            <div class="meter-fill" id="meter-fill"></div>
+          </div>
+          <div class="meter-labels">
+            <span>-50¢</span>
+            <span>在调</span>
+            <span>+50¢</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pitch-controls">
+        <button class="btn primary" id="btn-mic">▶ 启动麦克风</button>
+        <button class="btn" id="btn-clear-history">清空记录</button>
+
+        <div class="pitch-history" id="pitch-history">
+          <div class="card-label">采样记录</div>
+          <div id="history-list">
+            <div class="muted-hint">启动麦克风后开始记录…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="keyboard-wrap">
+      <div class="card-label">键盘可视</div>
+      <div class="piano" id="piano-pitch"></div>
+    </div>
+
+    <div class="status-bar">
+      <span id="status-pitch">● 就绪</span>
+      <span>AUTOCORRELATION PITCH DETECTOR · A4 = 440Hz</span>
+    </div>
+  </section>
+
+  <!-- ========== CHORD PANEL ========== -->
+  <section class="panel" id="panel-chord">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">和声的 <em>逻辑</em></h2>
+      </div>
+      <p class="panel-desc">
+        输入一段旋律（C大调：1234567；或 C D E F G A B），选择调性，系统会列出可用和弦并推荐下一步。基于常用和声进行规则：I → V → vi → IV 等。
+      </p>
+    </div>
+
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="card-label">旋律与调性</div>
+      <div class="chord-controls">
+        <div class="control-group">
+          <label>Key</label>
+          <select id="key-select">
+            <option value="C">C Major</option>
+            <option value="G">G Major</option>
+            <option value="D">D Major</option>
+            <option value="A">A Major</option>
+            <option value="E">E Major</option>
+            <option value="F">F Major</option>
+            <option value="Bb">B♭ Major</option>
+            <option value="Am">A Minor</option>
+            <option value="Em">E Minor</option>
+            <option value="Dm">D Minor</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Last Chord</label>
+          <select id="last-chord-select">
+            <option value="">— 起始 —</option>
+          </select>
+        </div>
+      </div>
+      <input type="text" class="melody-input" id="melody-input"
+        placeholder="输入当前音符，例如: 3  (或 E)"
+        value="1">
+    </div>
+
+    <div class="chord-results">
+      <div class="chord-card">
+        <h3>包含该音的<em>可选和弦</em></h3>
+        <div class="chord-list" id="chord-options"></div>
+      </div>
+
+      <div class="chord-card">
+        <h3>下一步<em>推荐</em></h3>
+        <div class="chord-list" id="chord-next"></div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <span>● 常用进行: <span class="sb-ok">I - V - vi - IV</span> · <span class="sb-ok">ii - V - I</span> · <span class="sb-ok">I - vi - IV - V</span></span>
+      <span>DIATONIC HARMONY ENGINE</span>
+    </div>
+  </section>
+
+  <!-- ========== SCORE PANEL ========== -->
+  <section class="panel" id="panel-score">
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title">纸上的 <em>声音</em></h2>
+      </div>
+      <p class="panel-desc">
+        导入 MIDI 文件转为简谱或五线谱，也可以直接输入简谱让它弹奏出来。基于 VexFlow 渲染五线谱，Tone.js 合成音色。
+      </p>
+    </div>
+
+    <div class="midi-controls">
+      <button class="btn primary" id="btn-upload">📂 导入 MIDI</button>
+      <input type="file" id="midi-file" accept=".mid,.midi" hidden>
+
+      <button class="btn" id="btn-example">载入示例</button>
+
+      <div class="notation-toggle">
+        <button class="active" data-notation="numbered">简谱</button>
+        <button data-notation="staff">五线谱</button>
+      </div>
+
+      <button class="btn" id="btn-play">▶ 播放</button>
+      <button class="btn danger" id="btn-stop">■ 停止</button>
+    </div>
+
+    <div class="card" style="margin-bottom: 16px;">
+      <div class="card-label">手动输入（简谱格式）</div>
+      <input type="text" id="manual-score"
+        placeholder="例如: 1 2 3 4 5 - | 6 5 4 3 2 1 - | (数字=音名，-=延长，|=小节线)"
+        style="width: 100%;">
+    </div>
+
+    <div class="notation-display" id="notation-display">
+      <div class="notation-empty">导入 MIDI 或输入简谱后，乐谱将在这里显示</div>
+    </div>
+
+    <div class="status-bar">
+      <span id="status-score">● 等待输入</span>
+      <span>VEXFLOW 4.2 · TONE.JS · MIDI PARSER</span>
+    </div>
+  </section>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

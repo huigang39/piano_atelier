@@ -1,0 +1,19 @@
+{
+  "name": "piano-atelier",
+  "version": "0.1.0",
+  "description": "一个给钢琴习者的工具集：音高辨识、和弦助手、乐谱转换",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "tone": "^14.8.49",
+    "vexflow": "^4.2.3"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}
