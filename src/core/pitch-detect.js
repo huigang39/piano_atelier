@@ -64,16 +64,34 @@ export function autoCorrelate(buf, sampleRate) {
  *   det.stop();
  */
 export class PitchDetector {
-  constructor({ onResult, minFreq = 60, maxFreq = 2000, minClarity = 0.5 } = {}) {
+  constructor({
+    onResult,
+    minFreq = 60,
+    maxFreq = 2000,
+    minClarity = 0.5,
+    smoothWindow = 5,
+    stabilityFrames = 3,
+  } = {}) {
     this.onResult = onResult ?? (() => {});
     this.minFreq = minFreq;
     this.maxFreq = maxFreq;
     this.minClarity = minClarity;
+    this.smoothWindow = smoothWindow;
+    this.stabilityFrames = stabilityFrames;
     this.audioCtx = null;
     this.analyser = null;
     this.buffer = null;
     this.stream = null;
     this.running = false;
+    this._resetSmoothing();
+  }
+
+  _resetSmoothing() {
+    this._freqHistory = [];
+    this._pendingMidi = null;
+    this._pendingCount = 0;
+    this._lockedMidi = null;
+    this._lockedNoteInfo = null;
   }
 
   async start() {
@@ -102,6 +120,7 @@ export class PitchDetector {
     this.stream = null;
     this.audioCtx = null;
     this.analyser = null;
+    this._resetSmoothing();
   }
 
   _loop() {
@@ -110,11 +129,39 @@ export class PitchDetector {
     const { freq, clarity } = autoCorrelate(this.buffer, this.audioCtx.sampleRate);
 
     if (freq > this.minFreq && freq < this.maxFreq && clarity > this.minClarity) {
-      const midi = freqToMidi(freq);
-      const noteInfo = midiToNoteName(midi);
-      const cents = centsOff(freq, noteInfo.midi);
-      this.onResult({ detected: true, freq, clarity, midi: noteInfo.midi, noteInfo, cents });
+      this._freqHistory.push(freq);
+      if (this._freqHistory.length > this.smoothWindow) this._freqHistory.shift();
+      const sorted = [...this._freqHistory].sort((a, b) => a - b);
+      const smoothFreq = sorted[Math.floor(sorted.length / 2)];
+
+      const rawMidi = freqToMidi(smoothFreq);
+      const candidate = midiToNoteName(rawMidi);
+
+      if (candidate.midi === this._pendingMidi) {
+        this._pendingCount++;
+      } else {
+        this._pendingMidi = candidate.midi;
+        this._pendingCount = 1;
+      }
+
+      if (this._pendingCount >= this.stabilityFrames) {
+        this._lockedMidi = candidate.midi;
+        this._lockedNoteInfo = candidate;
+      }
+
+      if (this._lockedMidi !== null) {
+        const cents = centsOff(smoothFreq, this._lockedMidi);
+        this.onResult({
+          detected: true,
+          freq: smoothFreq,
+          clarity,
+          midi: this._lockedMidi,
+          noteInfo: this._lockedNoteInfo,
+          cents,
+        });
+      }
     } else if (clarity < 0.3) {
+      this._resetSmoothing();
       this.onResult({ detected: false, freq: 0, clarity, midi: null, noteInfo: null, cents: 0 });
     }
 
